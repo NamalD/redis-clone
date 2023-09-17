@@ -1,34 +1,35 @@
-import socket
+import asyncio
+from asyncio import StreamReader, StreamWriter
 
 PORT = 6379
-PING_RESPONSE_CONTENT = "+PONG\r\n"
 REQUEST_BUFFER_SIZE = 1024
 
-# Response has to be encoded as binary
-PING_RESPONSE = PING_RESPONSE_CONTENT.encode("utf-8")
+PING_RESPONSE_CONTENT = "+PONG\r\n"
+PING_RESPONSE_BYTES = PING_RESPONSE_CONTENT.encode("utf-8")
 
 
-def main():
+async def main():
     print("Starting server on port {}".format(PORT))
 
-    server_socket = socket.create_server(("localhost", PORT), reuse_port=True)
+    server = await asyncio.start_server(handle_client, "localhost", PORT, reuse_port=True)
 
-    # Wait for client
-    (connection, client_ip) = server_socket.accept()
-    print("Client connected on IP: {}".format(client_ip))
+    async with server:
+        await server.serve_forever()
 
+
+async def handle_client(reader: StreamReader, writer: StreamWriter):
     while True:
-        # Wait for a request
-        request = connection.recv(REQUEST_BUFFER_SIZE)
-        while len(request) > 0:
-            print("Request: {}".format(request))
+        print("Client connected")
 
-            # Respond to PING
-            connection.send(PING_RESPONSE)
+        request = await reader.read(REQUEST_BUFFER_SIZE)
+        print("Request: {}".format(request))
 
-            # Wait for another request
-            request = connection.recv(REQUEST_BUFFER_SIZE)
+        if not request:
+            writer.close()
+            return
+
+        writer.write(PING_RESPONSE_BYTES)
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
