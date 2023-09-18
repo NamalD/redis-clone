@@ -29,22 +29,11 @@ async def handle_client(reader: StreamReader, writer: StreamWriter):
             writer.close()
             return
 
-        parse_request(request)
+        parsed = parser.parse_request(request)
+        print(parsed)
+
+        # Respond with PONG for every request
         writer.write(PING_RESPONSE_BYTES)
-
-
-def parse_request(request: bytes):
-    print("Request: {}".format(request))
-
-    data_type_byte, *rest = request
-    data_type = parser.parse_data_type(data_type_byte)
-    print(data_type)
-
-    if data_type == parser.RedisDataType.ARRAY:
-        parser.parse_array(rest)
-
-    rest_as_bytes = bytes(rest)
-    print("Rest: {}".format(rest_as_bytes))
 
 
 if __name__ == "__main__":

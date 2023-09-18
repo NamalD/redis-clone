@@ -1,52 +1,47 @@
+import enum
 import typing
 from enum import Enum
 
 CRLF = "\r\n"
 CRLF_LEN = len(CRLF)
 
+NUM_ELEMENTS_INDEX = 1
+
+
+class RedisElementType(Enum):
+    DATA_TYPE = enum.auto()
+
 
 class RedisDataType(Enum):
-    ARRAY = ord('*')
-    BULK_STRING = ord('$')
+    ARRAY = '*'
+    BULK_STRING = '$'
 
 
-def parse_data_type(byte: int):
-    return RedisDataType(byte)
+def parse_request(request: bytes):
+    decoded_request = request.decode()
+    first_element, *rest = decoded_request.split(CRLF)
+
+    # First element should identify the type
+    first_type = parse_type(first_element)
+
+    if first_type == RedisDataType.ARRAY:
+        # TODO: Get number of elements from second character of first element
+        num_elements = parse_num_elements(first_element)
+        return parse_array(rest, num_elements)
+
+    return first_type, rest
 
 
-def parse_num_elements(array):
-    num_elements_byte, *rest = array
-    num_elements = int(chr(num_elements_byte))
-    return num_elements, rest
+def parse_type(element: str):
+    return RedisDataType(element[0])
 
 
-def parse_array(array: typing.List[int]):
-    num_elements, rest = parse_num_elements(array)
-
-    # TODO: Yield return the results
-    for i in range(num_elements):
-        # Skip CRLF
-        rest = rest[CRLF_LEN:]
-
-        # Parse the next element
-        next_type_byte, *rest = rest
-        next_element_type = parse_data_type(next_type_byte)
-        print("Next element type: {}".format(next_element_type))
-
-        if next_element_type == RedisDataType.ARRAY:
-            return parse_array(rest)
-        elif next_element_type == RedisDataType.BULK_STRING:
-            return parse_bulk_string(rest)
-
-        rest_as_bytes = bytes(rest)
-        print("Rest in array: {}".format(rest_as_bytes))
+def parse_num_elements(element: str):
+    return int(element[NUM_ELEMENTS_INDEX])
 
 
-def parse_bulk_string(rest: typing.List[int]):
-    num_elements, rest = parse_num_elements(rest)
-    print("Number of elements: {}".format(num_elements))
+# TODO: Unit test
+def parse_array(elements: typing.List[str], num_elements: int):
+    # TODO: Parse num_elements as items in array
+    return num_elements, elements
 
-    # TODO: Skip CRLF
-
-    rest_as_bytes = bytes(rest)
-    print("Rest in bulk string: {}".format(rest_as_bytes))
