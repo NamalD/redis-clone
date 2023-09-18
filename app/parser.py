@@ -14,14 +14,14 @@ def parse_data_type(byte: int):
     return RedisDataType(byte)
 
 
-def parse_element_type(array):
+def parse_num_elements(array):
     num_elements_byte, *rest = array
     num_elements = int(chr(num_elements_byte))
     return num_elements, rest
 
 
 def parse_array(array: typing.List[int]):
-    num_elements, rest = parse_element_type(array)
+    num_elements, rest = parse_num_elements(array)
 
     # TODO: Yield return the results
     for i in range(num_elements):
@@ -43,7 +43,7 @@ def parse_array(array: typing.List[int]):
 
 
 def parse_bulk_string(rest: typing.List[int]):
-    num_elements, rest = parse_element_type(rest)
+    num_elements, rest = parse_num_elements(rest)
     print("Number of elements: {}".format(num_elements))
 
     # TODO: Skip CRLF
